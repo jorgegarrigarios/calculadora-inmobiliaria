@@ -3,17 +3,30 @@
 import React, { useMemo, useState, memo } from "react";
 
 const valoresIniciales = {
+  // Compra
   precioCompra: "",
   itp: "",
   notariaRegistroGestoria: "",
+
+  // Gastos hipotecarios separados
   tasacion: "",
-  gastosHipoteca: "",
+  comisionBroker: "",
+  comisionApertura: "",
+  otrosGastosHipoteca: "",
+
+  // Intermediación
   comisionAPI: "",
   comisionInmobiliaria: "",
+
+  // Puesta en marcha
   reforma: "",
   mueblesEquipamiento: "",
   otrosCostesIniciales: "",
+
+  // Ingresos
   alquilerMensual: "",
+
+  // Gastos operativos
   ibi: "",
   comunidad: "",
   seguroHogar: "",
@@ -23,6 +36,8 @@ const valoresIniciales = {
   reparacionesExtra: "",
   gestionAlquilerPct: "",
   vacanciaPct: "",
+
+  // Financiación
   hipoteca: "",
   tipoInteres: "",
   plazoAnos: "",
@@ -125,7 +140,9 @@ export default function CalculadoraRentabilidadInmobiliaria() {
     const itp = numero(datos.itp);
     const notariaRegistroGestoria = numero(datos.notariaRegistroGestoria);
     const tasacion = numero(datos.tasacion);
-    const gastosHipoteca = numero(datos.gastosHipoteca);
+    const comisionBroker = numero(datos.comisionBroker);
+    const comisionApertura = numero(datos.comisionApertura);
+    const otrosGastosHipoteca = numero(datos.otrosGastosHipoteca);
     const comisionAPI = numero(datos.comisionAPI);
     const comisionInmobiliaria = numero(datos.comisionInmobiliaria);
     const reforma = numero(datos.reforma);
@@ -150,7 +167,9 @@ export default function CalculadoraRentabilidadInmobiliaria() {
       itp +
       notariaRegistroGestoria +
       tasacion +
-      gastosHipoteca +
+      comisionBroker +
+      comisionApertura +
+      otrosGastosHipoteca +
       comisionAPI +
       comisionInmobiliaria;
 
@@ -277,7 +296,9 @@ export default function CalculadoraRentabilidadInmobiliaria() {
                   <Campo label="ITP / impuestos de compra" campo="itp" value={datos.itp} onChange={actualizar} />
                   <Campo label="Notaría, registro y gestoría" campo="notariaRegistroGestoria" value={datos.notariaRegistroGestoria} onChange={actualizar} />
                   <Campo label="Tasación" campo="tasacion" value={datos.tasacion} onChange={actualizar} />
-                  <Campo label="Gastos de hipoteca" campo="gastosHipoteca" value={datos.gastosHipoteca} onChange={actualizar} />
+                  <Campo label="Comisión Broker Hipotecario" campo="comisionBroker" value={datos.comisionBroker} onChange={actualizar} />
+                  <Campo label="Comisión apertura hipoteca" campo="comisionApertura" value={datos.comisionApertura} onChange={actualizar} />
+                  <Campo label="Otros gastos hipoteca" campo="otrosGastosHipoteca" value={datos.otrosGastosHipoteca} onChange={actualizar} />
                   <Campo label="Comisión API" campo="comisionAPI" value={datos.comisionAPI} onChange={actualizar} />
                   <Campo label="Comisión inmobiliaria" campo="comisionInmobiliaria" value={datos.comisionInmobiliaria} onChange={actualizar} />
                 </div>
