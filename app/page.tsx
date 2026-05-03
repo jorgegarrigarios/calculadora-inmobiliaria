@@ -1,5 +1,4 @@
 "use client";
-// @ts-nocheck
 
 import React, { useMemo, useState, memo } from "react";
 
@@ -29,14 +28,16 @@ const valoresIniciales = {
   plazoAnos: "",
 };
 
-function numero(valor) {
+type CampoClave = keyof typeof valoresIniciales;
+
+function numero(valor: string | number | null | undefined): number {
   if (valor === "" || valor === null || valor === undefined) return 0;
   const limpio = String(valor).replace(",", ".");
   const n = Number(limpio);
   return Number.isFinite(n) ? n : 0;
 }
 
-function euros(valor) {
+function euros(valor: number): string {
   return new Intl.NumberFormat("es-ES", {
     style: "currency",
     currency: "EUR",
@@ -44,11 +45,16 @@ function euros(valor) {
   }).format(Number.isFinite(valor) ? valor : 0);
 }
 
-function porcentaje(valor) {
+function porcentaje(valor: number): string {
   return `${(Number.isFinite(valor) ? valor : 0).toFixed(2)}%`;
 }
 
-const Tarjeta = memo(function Tarjeta({ children, className = "" }) {
+type TarjetaProps = {
+  children: React.ReactNode;
+  className?: string;
+};
+
+const Tarjeta = memo(function Tarjeta({ children, className = "" }: TarjetaProps) {
   return (
     <div className={`rounded-2xl border border-slate-200 bg-white shadow-sm ${className}`}>
       {children}
@@ -56,7 +62,16 @@ const Tarjeta = memo(function Tarjeta({ children, className = "" }) {
   );
 });
 
-const Campo = memo(function Campo({ label, campo, value, onChange, suffix = "€", placeholder = "0" }) {
+type CampoProps = {
+  label: string;
+  campo: CampoClave;
+  value: string;
+  onChange: (campo: CampoClave, value: string) => void;
+  suffix?: string;
+  placeholder?: string;
+};
+
+const Campo = memo(function Campo({ label, campo, value, onChange, suffix = "€", placeholder = "0" }: CampoProps) {
   return (
     <div className="space-y-1">
       <label className="block text-sm font-medium text-slate-600">{label}</label>
@@ -75,7 +90,14 @@ const Campo = memo(function Campo({ label, campo, value, onChange, suffix = "€
   );
 });
 
-const Metrica = memo(function Metrica({ titulo, valor, ayuda, destacado = false }) {
+type MetricaProps = {
+  titulo: string;
+  valor: string;
+  ayuda: string;
+  destacado?: boolean;
+};
+
+const Metrica = memo(function Metrica({ titulo, valor, ayuda, destacado = false }: MetricaProps) {
   return (
     <Tarjeta className={destacado ? "border-slate-400" : ""}>
       <div className="p-4">
@@ -90,7 +112,7 @@ const Metrica = memo(function Metrica({ titulo, valor, ayuda, destacado = false 
 export default function CalculadoraRentabilidadInmobiliaria() {
   const [datos, setDatos] = useState(valoresIniciales);
 
-  function actualizar(campo, valor) {
+  function actualizar(campo: CampoClave, valor: string) {
     setDatos((prev) => ({ ...prev, [campo]: valor }));
   }
 
