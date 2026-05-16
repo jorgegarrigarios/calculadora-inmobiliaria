@@ -515,10 +515,16 @@ export default function CalculadoraRentabilidadInmobiliaria() {
                       <p className="mt-2 text-sm text-slate-700">{scoreRapido.explicacion}</p>
                     </div>
                   </div>
-                  <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
+                  <div className="grid grid-cols-1 gap-4 md:grid-cols-4">
+                    <Metrica titulo="Rentabilidad bruta" valor={porcentaje(r.rentabilidadBruta)} ayuda="Ingresos anuales / coste total" destacado />
                     <Metrica titulo="Cash-flow mensual" valor={euros(r.cashflowMensualPreIRPF)} ayuda="Dinero que queda al mes antes de IRPF" destacado />
                     <Metrica titulo="Rentabilidad neta" valor={porcentaje(r.rentabilidadNeta)} ayuda="NOI anual / coste total" destacado />
                     <Metrica titulo="ROE pre-IRPF" valor={porcentaje(r.roePreIRPF)} ayuda="Cash-flow anual / capital propio" destacado />
+                  </div>
+                  <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
+                    <Metrica titulo="Capital propio" valor={euros(r.capitalPropio)} ayuda="Dinero aproximado que necesitas aportar" />
+                    <Metrica titulo="Cuota hipotecaria" valor={euros(r.cuotaHipoteca)} ayuda="Cuota mensual estimada" />
+                    <Metrica titulo="Margen seguridad" valor={euros(r.margenSeguridadMensual)} ayuda="Alquiler - cuota - gastos medios" />
                   </div>
                 </div>
               </Tarjeta>
@@ -537,33 +543,39 @@ export default function CalculadoraRentabilidadInmobiliaria() {
               </Tarjeta>
             )}
 
-            <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
-              <Metrica titulo="Coste de compra" valor={euros(r.costeCompra)} ayuda="Precio + impuestos + notaría + gastos + comisiones" />
-              <Metrica titulo="Puesta en marcha" valor={euros(r.puestaMarcha)} ayuda="Reforma + muebles + otros costes" />
-              <Metrica titulo="Coste total" valor={euros(r.costeTotal)} ayuda="Capital necesario total" destacado />
-            </div>
-
-            <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
-              <Metrica titulo="Capital propio" valor={euros(r.capitalPropio)} ayuda="Coste total menos hipoteca" destacado />
-              <Metrica titulo="Cuota hipotecaria" valor={euros(r.cuotaHipoteca)} ayuda="Cuota mensual estimada" />
-              <Metrica titulo="LTV compra" valor={porcentaje(r.ltvCompra)} ayuda="Hipoteca / precio de compra" />
-            </div>
-
-            <Tarjeta className="border-sky-200 bg-sky-50">
-              <div className="p-5 space-y-4">
-                <h2 className="text-xl font-semibold text-sky-900">Resultados PRE-IRPF</h2>
+            {modoAvanzado && (
+              <>
                 <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
-                  <Metrica titulo="Cash-flow mensual pre-IRPF" valor={euros(r.cashflowMensualPreIRPF)} ayuda="NOI mensual menos hipoteca" destacado />
-                  <Metrica titulo="Rentabilidad neta operativa" valor={porcentaje(r.rentabilidadNeta)} ayuda="NOI anual / coste total" destacado />
-                  <Metrica titulo="ROE pre-IRPF" valor={porcentaje(r.roePreIRPF)} ayuda="Cash-flow anual / capital propio" destacado />
+                  <Metrica titulo="Coste de compra" valor={euros(r.costeCompra)} ayuda="Precio + impuestos + notaría + gastos + comisiones" />
+                  <Metrica titulo="Puesta en marcha" valor={euros(r.puestaMarcha)} ayuda="Reforma + muebles + otros costes" />
+                  <Metrica titulo="Coste total" valor={euros(r.costeTotal)} ayuda="Capital necesario total" destacado />
                 </div>
+
                 <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
-                  <Metrica titulo="Cuota / alquiler" valor={porcentaje(r.ratioCuotaAlquiler)} ayuda="Parte del alquiler destinada a hipoteca" />
-                  <Metrica titulo="Margen seguridad" valor={euros(r.margenSeguridadMensual)} ayuda="Alquiler - cuota - gastos medios" />
-                  <Metrica titulo="Break-even alquiler" valor={euros(r.alquilerMinimoBreakEven)} ayuda="Alquiler mínimo para no perder dinero" />
+                  <Metrica titulo="Capital propio" valor={euros(r.capitalPropio)} ayuda="Coste total menos hipoteca" destacado />
+                  <Metrica titulo="Cuota hipotecaria" valor={euros(r.cuotaHipoteca)} ayuda="Cuota mensual estimada" />
+                  <Metrica titulo="LTV compra" valor={porcentaje(r.ltvCompra)} ayuda="Hipoteca / precio de compra" />
                 </div>
-              </div>
-            </Tarjeta>
+              </>
+            )}
+
+            {modoAvanzado && (
+              <Tarjeta className="border-sky-200 bg-sky-50">
+                <div className="p-5 space-y-4">
+                  <h2 className="text-xl font-semibold text-sky-900">Resultados PRE-IRPF</h2>
+                  <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
+                    <Metrica titulo="Cash-flow mensual pre-IRPF" valor={euros(r.cashflowMensualPreIRPF)} ayuda="NOI mensual menos hipoteca" destacado />
+                    <Metrica titulo="Rentabilidad neta operativa" valor={porcentaje(r.rentabilidadNeta)} ayuda="NOI anual / coste total" destacado />
+                    <Metrica titulo="ROE pre-IRPF" valor={porcentaje(r.roePreIRPF)} ayuda="Cash-flow anual / capital propio" destacado />
+                  </div>
+                  <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
+                    <Metrica titulo="Cuota / alquiler" valor={porcentaje(r.ratioCuotaAlquiler)} ayuda="Parte del alquiler destinada a hipoteca" />
+                    <Metrica titulo="Margen seguridad" valor={euros(r.margenSeguridadMensual)} ayuda="Alquiler - cuota - gastos medios" />
+                    <Metrica titulo="Break-even alquiler" valor={euros(r.alquilerMinimoBreakEven)} ayuda="Alquiler mínimo para no perder dinero" />
+                  </div>
+                </div>
+              </Tarjeta>
+            )}
 
             {modoAvanzado && (
               <>
