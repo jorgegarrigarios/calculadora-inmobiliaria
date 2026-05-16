@@ -355,6 +355,13 @@ export default function CalculadoraRentabilidadInmobiliaria() {
     };
   }, [score]);
 
+  const anosRecuperacion = r.cashflowAnualPreIRPF > 0 ? r.capitalPropio / r.cashflowAnualPreIRPF : 0;
+
+  const porcentajeRecuperacion =
+    anosRecuperacion > 0
+      ? limitar((1 / anosRecuperacion) * 100, 0, 100)
+      : 0;
+
   const datosGraficoCostes = [
     { label: "Compra", valor: r.precioCompra },
     { label: "Impuestos", valor: r.itp },
@@ -491,11 +498,61 @@ export default function CalculadoraRentabilidadInmobiliaria() {
                   <p className="text-xs text-slate-500">Estimación simplificada. Revísalo con asesor fiscal.</p>
                 </div>
               </Tarjeta>
+
+              <div className="grid grid-cols-1 gap-6 xl:grid-cols-2">
+                <GraficoBarras
+                  titulo="¿Dónde se va tu dinero?"
+                  descripcion="Visualiza rápidamente qué parte del dinero necesitas para comprar, reformar y poner el inmueble en alquiler."
+                  datos={datosGraficoCostes.length ? datosGraficoCostes : [{ label: "Sin datos", valor: 0 }]}
+                />
+
+                <Tarjeta>
+                  <div className="p-5">
+                    <h3 className="text-lg font-semibold">Recuperación de la inversión</h3>
+                    <p className="mt-1 text-sm text-slate-600">
+                      Estimación simple de cuántos años tardarías en recuperar tu dinero con el cash-flow anual antes de impuestos.
+                    </p>
+
+                    <div className="mt-5 space-y-4">
+                      <div>
+                        <div className="mb-2 flex items-center justify-between text-sm">
+                          <span className="font-medium text-slate-700">Progreso estimado anual</span>
+                          <span className="font-semibold text-slate-900">
+                            {anosRecuperacion > 0 ? `${anosRecuperacion.toFixed(1)} años` : "No recuperable"}
+                          </span>
+                        </div>
+
+                        <div className="h-4 rounded-full bg-slate-200">
+                          <div
+                            className={`h-4 rounded-full ${anosRecuperacion <= 10 ? "bg-emerald-500" : anosRecuperacion <= 15 ? "bg-amber-500" : "bg-red-500"}`}
+                            style={{ width: `${porcentajeRecuperacion}%` }}
+                          />
+                        </div>
+                      </div>
+
+                      <div className="grid grid-cols-1 gap-3 text-sm text-slate-700 md:grid-cols-2">
+                        <p>
+                          <strong>Capital propio:</strong> {euros(r.capitalPropio)}
+                        </p>
+                        <p>
+                          <strong>Cash-flow anual:</strong> {euros(r.cashflowAnualPreIRPF)}
+                        </p>
+                      </div>
+
+                      <p className="text-xs text-slate-500">
+                        Cuantos menos años necesites para recuperar tu inversión, más eficiente suele ser la operación.
+                      </p>
+                    </div>
+                  </div>
+                </Tarjeta>
+              </div>
+              </>
             )}
           </div>
 
           <div className="space-y-6 lg:col-span-2">
             {!modoAvanzado && (
+              <>
               <Tarjeta className={scoreRapido.fondo}>
                 <div className="p-5 space-y-4">
                   <div>
