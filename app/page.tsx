@@ -41,10 +41,9 @@ const valoresIniciales = {
   impuestoGananciaPct: "21",
 };
 
-type CampoClave = keyof typeof valoresIniciales;
-type CampoClaveNumerico = Exclude<CampoClave, "aplicarAmortizacion">;
-
 type Datos = typeof valoresIniciales;
+type CampoClave = keyof Datos;
+type CampoClaveNumerico = Exclude<CampoClave, "aplicarAmortizacion">;
 
 function numero(valor: string | number | null | undefined): number {
   if (valor === "" || valor === null || valor === undefined) return 0;
@@ -123,6 +122,7 @@ const Metrica = memo(function Metrica({ titulo, valor, ayuda, destacado = false 
 type BarraDato = { label: string; valor: number; ayuda?: string };
 const GraficoBarras = memo(function GraficoBarras({ titulo, descripcion, datos }: { titulo: string; descripcion: string; datos: BarraDato[] }) {
   const maximo = Math.max(...datos.map((d) => Math.abs(d.valor)), 1);
+
   return (
     <Tarjeta>
       <div className="p-5">
@@ -178,10 +178,12 @@ function calcular(datos: Datos) {
   const costeTotal = costeCompra + puestaMarcha;
   const hipoteca = numero(datos.hipoteca);
   const capitalPropio = Math.max(costeTotal - hipoteca, 0);
+
   const alquilerMensual = numero(datos.alquilerMensual);
   const ingresosBrutosAnuales = alquilerMensual * 12;
   const vacancia = ingresosBrutosAnuales * (numero(datos.vacanciaPct) / 100);
   const gestion = ingresosBrutosAnuales * (numero(datos.gestionAlquilerPct) / 100);
+
   const gastosOperativosAnuales =
     numero(datos.ibi) +
     numero(datos.comunidad) +
@@ -192,13 +194,16 @@ function calcular(datos: Datos) {
     numero(datos.reparacionesExtra) +
     vacancia +
     gestion;
+
   const noiAnual = ingresosBrutosAnuales - gastosOperativosAnuales;
   const interesMensual = numero(datos.tipoInteres) / 100 / 12;
   const pagos = Math.max(numero(datos.plazoAnos) * 12, 1);
-  const cuotaHipoteca = hipoteca > 0 && numero(datos.plazoAnos) > 0 ? interesMensual > 0 ? (hipoteca * interesMensual) / (1 - Math.pow(1 + interesMensual, -pagos)) : hipoteca / pagos : 0;
+  const cuotaHipoteca = hipoteca > 0 && numero(datos.plazoAnos) > 0 ? (interesMensual > 0 ? (hipoteca * interesMensual) / (1 - Math.pow(1 + interesMensual, -pagos)) : hipoteca / pagos) : 0;
   const cuotaAnual = cuotaHipoteca * 12;
+
   const cashflowAnualPreIRPF = noiAnual - cuotaAnual;
   const cashflowMensualPreIRPF = cashflowAnualPreIRPF / 12;
+
   const interesesPrimerAno = hipoteca * (numero(datos.tipoInteres) / 100);
   const amortizacionFiscalAnual = datos.aplicarAmortizacion === "si" ? numero(datos.valorConstruccion) * (numero(datos.porcentajeAmortizacion) / 100) : 0;
   const gastosDeduciblesEstimados = Math.max(gastosOperativosAnuales + interesesPrimerAno + amortizacionFiscalAnual - numero(datos.gastosNoDeducibles), 0);
@@ -207,6 +212,7 @@ function calcular(datos: Datos) {
   const impuestoIRPF = Math.max(baseReducida, 0) * (numero(datos.tipoMarginalIRPF) / 100);
   const cashflowAnualPostIRPF = cashflowAnualPreIRPF - impuestoIRPF;
   const cashflowMensualPostIRPF = cashflowAnualPostIRPF / 12;
+
   const rentabilidadBruta = costeTotal > 0 ? (ingresosBrutosAnuales / costeTotal) * 100 : 0;
   const rentabilidadNeta = costeTotal > 0 ? (noiAnual / costeTotal) * 100 : 0;
   const roePreIRPF = capitalPropio > 0 ? (cashflowAnualPreIRPF / capitalPropio) * 100 : 0;
@@ -217,6 +223,7 @@ function calcular(datos: Datos) {
   const ratioCuotaAlquiler = alquilerMensual > 0 ? (cuotaHipoteca / alquilerMensual) * 100 : 0;
   const margenSeguridadMensual = alquilerMensual - cuotaHipoteca - gastosOperativosAnuales / 12;
   const alquilerMinimoBreakEven = cuotaHipoteca + gastosOperativosAnuales / 12;
+
   const anos = numero(datos.anosInversion);
   const valorFuturoAlternativa = capitalPropio * Math.pow(1 + numero(datos.rentabilidadAlternativa) / 100, anos);
   const cashflowTotal = cashflowAnualPostIRPF * anos;
@@ -298,12 +305,7 @@ export default function CalculadoraRentabilidadInmobiliaria() {
     const decision = total >= 75 ? "Comprar / reservar si la visita confirma" : total >= 55 ? "Negociar o analizar mejor" : "No comprar con estos números";
     const color = total >= 75 ? "text-emerald-700" : total >= 55 ? "text-amber-700" : "text-red-700";
     const fondo = total >= 75 ? "bg-emerald-50 border-emerald-200" : total >= 55 ? "bg-amber-50 border-amber-200" : "bg-red-50 border-red-200";
-    const explicacion =
-      total >= 75
-        ? "La operación parece atractiva antes de impuestos. Si el estado del inmueble, la zona, la demanda de alquiler y la documentación son correctos, tendría sentido avanzar."
-        : total >= 55
-        ? "La operación no está clara. Puede tener sentido, pero deberías negociar precio, revisar gastos o confirmar alquiler real antes de comprometerte."
-        : "La operación parece débil. Salvo que haya una fuerte rebaja, una mejora clara del alquiler o una razón estratégica, lo prudente sería descartarla.";
+    const explicacion = total >= 75 ? "La operación parece atractiva antes de impuestos. Si la visita y la documentación confirman los datos, tendría sentido avanzar." : total >= 55 ? "La operación no está clara. Puede tener sentido, pero deberías negociar precio, revisar gastos o confirmar alquiler real." : "La operación parece débil. Salvo rebaja clara o mejora del alquiler, lo prudente sería descartarla.";
     return { total, decision, color, fondo, explicacion };
   }, [r]);
 
@@ -323,7 +325,7 @@ export default function CalculadoraRentabilidadInmobiliaria() {
 
   const escenarios = useMemo(() => {
     function calcularEscenario(alquilerFactor: number, vacanciaExtra: number, tipoExtra: number) {
-      const copia = { ...datos };
+      const copia: Datos = { ...datos };
       copia.alquilerMensual = String(numero(datos.alquilerMensual) * alquilerFactor);
       copia.vacanciaPct = String(Math.max(numero(datos.vacanciaPct) + vacanciaExtra, 0));
       copia.tipoInteres = String(Math.max(numero(datos.tipoInteres) + tipoExtra, 0));
@@ -355,13 +357,6 @@ export default function CalculadoraRentabilidadInmobiliaria() {
     };
   }, [score]);
 
-  const anosRecuperacion = r.cashflowAnualPreIRPF > 0 ? r.capitalPropio / r.cashflowAnualPreIRPF : 0;
-
-  const porcentajeRecuperacion =
-    anosRecuperacion > 0
-      ? limitar((1 / anosRecuperacion) * 100, 0, 100)
-      : 0;
-
   const datosGraficoCostes = [
     { label: "Compra", valor: r.precioCompra },
     { label: "Impuestos", valor: r.itp },
@@ -370,6 +365,9 @@ export default function CalculadoraRentabilidadInmobiliaria() {
     { label: "Comisiones", valor: r.comisiones },
     { label: "Reforma/muebles", valor: r.puestaMarcha },
   ].filter((d) => d.valor > 0);
+
+  const anosRecuperacion = r.cashflowAnualPreIRPF > 0 ? r.capitalPropio / r.cashflowAnualPreIRPF : 0;
+  const porcentajeRecuperacion = anosRecuperacion > 0 ? limitar((1 / anosRecuperacion) * 100, 0, 100) : 0;
 
   return (
     <div className="min-h-screen bg-slate-50 p-6 text-slate-900">
@@ -426,13 +424,9 @@ export default function CalculadoraRentabilidadInmobiliaria() {
                     </div>
                     <Campo label="Alquiler mensual esperado" campo="alquilerMensual" value={datos.alquilerMensual} onChange={actualizar} />
                     <Campo label="Gastos anuales estimados" campo="mantenimiento" value={datos.mantenimiento} onChange={actualizar} />
-                    <p className="-mt-3 text-xs text-slate-500">
-                      Incluye IBI, comunidad, seguros, mantenimiento y pequeños imprevistos.
-                    </p>
+                    <p className="-mt-3 text-xs text-slate-500">Incluye IBI, comunidad, seguros, mantenimiento y pequeños imprevistos.</p>
                     <Campo label="Vacancia estimada" campo="vacanciaPct" value={datos.vacanciaPct} onChange={actualizar} suffix="%" />
-                    <p className="-mt-3 text-xs text-slate-500">
-                      Muy importante: evita sobreestimar la rentabilidad asumiendo que siempre estará alquilado.
-                    </p>
+                    <p className="-mt-3 text-xs text-slate-500">Muy importante: evita sobreestimar la rentabilidad asumiendo que siempre estará alquilado.</p>
                   </div>
                 </Tarjeta>
               </>
@@ -498,110 +492,84 @@ export default function CalculadoraRentabilidadInmobiliaria() {
                   <p className="text-xs text-slate-500">Estimación simplificada. Revísalo con asesor fiscal.</p>
                 </div>
               </Tarjeta>
-
-              <div className="grid grid-cols-1 gap-6 xl:grid-cols-2">
-                <GraficoBarras
-                  titulo="¿Dónde se va tu dinero?"
-                  descripcion="Visualiza rápidamente qué parte del dinero necesitas para comprar, reformar y poner el inmueble en alquiler."
-                  datos={datosGraficoCostes.length ? datosGraficoCostes : [{ label: "Sin datos", valor: 0 }]}
-                />
-
-                <Tarjeta>
-                  <div className="p-5">
-                    <h3 className="text-lg font-semibold">Recuperación de la inversión</h3>
-                    <p className="mt-1 text-sm text-slate-600">
-                      Estimación simple de cuántos años tardarías en recuperar tu dinero con el cash-flow anual antes de impuestos.
-                    </p>
-
-                    <div className="mt-5 space-y-4">
-                      <div>
-                        <div className="mb-2 flex items-center justify-between text-sm">
-                          <span className="font-medium text-slate-700">Progreso estimado anual</span>
-                          <span className="font-semibold text-slate-900">
-                            {anosRecuperacion > 0 ? `${anosRecuperacion.toFixed(1)} años` : "No recuperable"}
-                          </span>
-                        </div>
-
-                        <div className="h-4 rounded-full bg-slate-200">
-                          <div
-                            className={`h-4 rounded-full ${anosRecuperacion <= 10 ? "bg-emerald-500" : anosRecuperacion <= 15 ? "bg-amber-500" : "bg-red-500"}`}
-                            style={{ width: `${porcentajeRecuperacion}%` }}
-                          />
-                        </div>
-                      </div>
-
-                      <div className="grid grid-cols-1 gap-3 text-sm text-slate-700 md:grid-cols-2">
-                        <p>
-                          <strong>Capital propio:</strong> {euros(r.capitalPropio)}
-                        </p>
-                        <p>
-                          <strong>Cash-flow anual:</strong> {euros(r.cashflowAnualPreIRPF)}
-                        </p>
-                      </div>
-
-                      <p className="text-xs text-slate-500">
-                        Cuantos menos años necesites para recuperar tu inversión, más eficiente suele ser la operación.
-                      </p>
-                    </div>
-                  </div>
-                </Tarjeta>
-              </div>
-              </>
             )}
           </div>
 
           <div className="space-y-6 lg:col-span-2">
             {!modoAvanzado && (
               <>
-              <Tarjeta className={scoreRapido.fondo}>
-                <div className="p-5 space-y-4">
-                  <div>
-                    <h2 className="text-xl font-semibold">Decisión rápida antes de impuestos</h2>
-                    <p className="mt-1 text-sm text-slate-600">
-                      Pensado para usar en una visita: te da una decisión objetiva con los datos mínimos importantes.
-                    </p>
-                  </div>
-                  <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
+                <Tarjeta className={scoreRapido.fondo}>
+                  <div className="p-5 space-y-4">
                     <div>
-                      <p className="text-sm text-slate-600">Score rápido</p>
-                      <p className={`mt-1 text-4xl font-bold ${scoreRapido.color}`}>{scoreRapido.total}/100</p>
+                      <h2 className="text-xl font-semibold">Decisión rápida antes de impuestos</h2>
+                      <p className="mt-1 text-sm text-slate-600">Pensado para usar en una visita: te da una decisión objetiva con los datos mínimos importantes.</p>
                     </div>
-                    <div className="md:col-span-2">
-                      <p className="text-sm text-slate-600">Resultado objetivo</p>
-                      <p className={`mt-1 text-2xl font-bold ${scoreRapido.color}`}>{scoreRapido.decision}</p>
-                      <p className="mt-2 text-sm text-slate-700">{scoreRapido.explicacion}</p>
+                    <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
+                      <div>
+                        <p className="text-sm text-slate-600">Score rápido</p>
+                        <p className={`mt-1 text-4xl font-bold ${scoreRapido.color}`}>{scoreRapido.total}/100</p>
+                      </div>
+                      <div className="md:col-span-2">
+                        <p className="text-sm text-slate-600">Resultado objetivo</p>
+                        <p className={`mt-1 text-2xl font-bold ${scoreRapido.color}`}>{scoreRapido.decision}</p>
+                        <p className="mt-2 text-sm text-slate-700">{scoreRapido.explicacion}</p>
+                      </div>
+                    </div>
+                    <div className="grid grid-cols-1 gap-4 md:grid-cols-4">
+                      <Metrica titulo="Rentabilidad bruta" valor={porcentaje(r.rentabilidadBruta)} ayuda="Ingresos anuales / coste total" destacado />
+                      <Metrica titulo="Cash-flow mensual" valor={euros(r.cashflowMensualPreIRPF)} ayuda="Dinero que queda al mes antes de IRPF" destacado />
+                      <Metrica titulo="Rentabilidad neta" valor={porcentaje(r.rentabilidadNeta)} ayuda="NOI anual / coste total" destacado />
+                      <Metrica titulo="ROE pre-IRPF" valor={porcentaje(r.roePreIRPF)} ayuda="Cash-flow anual / capital propio" destacado />
+                    </div>
+                    <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
+                      <Metrica titulo="Capital propio" valor={euros(r.capitalPropio)} ayuda="Dinero aproximado que necesitas aportar" />
+                      <Metrica titulo="Cuota hipotecaria" valor={euros(r.cuotaHipoteca)} ayuda="Cuota mensual estimada" />
+                      <Metrica titulo="Margen seguridad" valor={euros(r.margenSeguridadMensual)} ayuda="Alquiler - cuota - gastos medios" />
                     </div>
                   </div>
-                  <div className="grid grid-cols-1 gap-4 md:grid-cols-4">
-                    <Metrica titulo="Rentabilidad bruta" valor={porcentaje(r.rentabilidadBruta)} ayuda="Ingresos anuales / coste total" destacado />
-                    <Metrica titulo="Cash-flow mensual" valor={euros(r.cashflowMensualPreIRPF)} ayuda="Dinero que queda al mes antes de IRPF" destacado />
-                    <Metrica titulo="Rentabilidad neta" valor={porcentaje(r.rentabilidadNeta)} ayuda="NOI anual / coste total" destacado />
-                    <Metrica titulo="ROE pre-IRPF" valor={porcentaje(r.roePreIRPF)} ayuda="Cash-flow anual / capital propio" destacado />
-                  </div>
-                  <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
-                    <Metrica titulo="Capital propio" valor={euros(r.capitalPropio)} ayuda="Dinero aproximado que necesitas aportar" />
-                    <Metrica titulo="Cuota hipotecaria" valor={euros(r.cuotaHipoteca)} ayuda="Cuota mensual estimada" />
-                    <Metrica titulo="Margen seguridad" valor={euros(r.margenSeguridadMensual)} ayuda="Alquiler - cuota - gastos medios" />
-                  </div>
-                </div>
-              </Tarjeta>
-            )}
+                </Tarjeta>
 
-            {modoAvanzado && (
-              <Tarjeta className={score.fondo}>
-                <div className="p-5">
-                  <p className="text-sm text-slate-600"><strong>¿Qué significa este score?</strong> Es una nota de 0 a 100 que resume si la inversión es buena o mala teniendo en cuenta rentabilidad, riesgo y seguridad.</p>
-                  <div className="mt-4 grid grid-cols-1 gap-4 md:grid-cols-4">
-                    <div><p className="text-sm text-slate-600">Score inversión</p><p className={`text-4xl font-bold ${score.color}`}>{score.total}/100</p></div>
-                    <div><p className="text-sm text-slate-600">EV estimado</p><p className={`text-4xl font-bold ${score.color}`}>{score.evPct >= 0 ? "+" : ""}{score.evPct}%</p></div>
-                    <div className="md:col-span-2"><p className="text-sm text-slate-600">Decisión sugerida</p><p className={`text-2xl font-bold ${score.color}`}>{score.decision}</p></div>
-                  </div>
+                <div className="grid grid-cols-1 gap-6 xl:grid-cols-2">
+                  <GraficoBarras titulo="¿Dónde se va tu dinero?" descripcion="Visualiza rápidamente qué parte del dinero necesitas para comprar, reformar y poner el inmueble en alquiler." datos={datosGraficoCostes.length ? datosGraficoCostes : [{ label: "Sin datos", valor: 0 }]} />
+                  <Tarjeta>
+                    <div className="p-5">
+                      <h3 className="text-lg font-semibold">Recuperación de la inversión</h3>
+                      <p className="mt-1 text-sm text-slate-600">Estimación simple de cuántos años tardarías en recuperar tu dinero con el cash-flow anual antes de impuestos.</p>
+                      <div className="mt-5 space-y-4">
+                        <div>
+                          <div className="mb-2 flex items-center justify-between text-sm">
+                            <span className="font-medium text-slate-700">Progreso estimado anual</span>
+                            <span className="font-semibold text-slate-900">{anosRecuperacion > 0 ? `${anosRecuperacion.toFixed(1)} años` : "No recuperable"}</span>
+                          </div>
+                          <div className="h-4 rounded-full bg-slate-200">
+                            <div className={`h-4 rounded-full ${anosRecuperacion <= 10 ? "bg-emerald-500" : anosRecuperacion <= 15 ? "bg-amber-500" : "bg-red-500"}`} style={{ width: `${porcentajeRecuperacion}%` }} />
+                          </div>
+                        </div>
+                        <div className="grid grid-cols-1 gap-3 text-sm text-slate-700 md:grid-cols-2">
+                          <p><strong>Capital propio:</strong> {euros(r.capitalPropio)}</p>
+                          <p><strong>Cash-flow anual:</strong> {euros(r.cashflowAnualPreIRPF)}</p>
+                        </div>
+                        <p className="text-xs text-slate-500">Cuantos menos años necesites para recuperar tu inversión, más eficiente suele ser la operación.</p>
+                      </div>
+                    </div>
+                  </Tarjeta>
                 </div>
-              </Tarjeta>
+              </>
             )}
 
             {modoAvanzado && (
               <>
+                <Tarjeta className={score.fondo}>
+                  <div className="p-5">
+                    <p className="text-sm text-slate-600"><strong>¿Qué significa este score?</strong> Es una nota de 0 a 100 que resume si la inversión es buena o mala teniendo en cuenta rentabilidad, riesgo y seguridad.</p>
+                    <div className="mt-4 grid grid-cols-1 gap-4 md:grid-cols-4">
+                      <div><p className="text-sm text-slate-600">Score inversión</p><p className={`text-4xl font-bold ${score.color}`}>{score.total}/100</p></div>
+                      <div><p className="text-sm text-slate-600">EV estimado</p><p className={`text-4xl font-bold ${score.color}`}>{score.evPct >= 0 ? "+" : ""}{score.evPct}%</p></div>
+                      <div className="md:col-span-2"><p className="text-sm text-slate-600">Decisión sugerida</p><p className={`text-2xl font-bold ${score.color}`}>{score.decision}</p></div>
+                    </div>
+                  </div>
+                </Tarjeta>
+
                 <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
                   <Metrica titulo="Coste de compra" valor={euros(r.costeCompra)} ayuda="Precio + impuestos + notaría + gastos + comisiones" />
                   <Metrica titulo="Puesta en marcha" valor={euros(r.puestaMarcha)} ayuda="Reforma + muebles + otros costes" />
@@ -613,29 +581,18 @@ export default function CalculadoraRentabilidadInmobiliaria() {
                   <Metrica titulo="Cuota hipotecaria" valor={euros(r.cuotaHipoteca)} ayuda="Cuota mensual estimada" />
                   <Metrica titulo="LTV compra" valor={porcentaje(r.ltvCompra)} ayuda="Hipoteca / precio de compra" />
                 </div>
-              </>
-            )}
 
-            {modoAvanzado && (
-              <Tarjeta className="border-sky-200 bg-sky-50">
-                <div className="p-5 space-y-4">
-                  <h2 className="text-xl font-semibold text-sky-900">Resultados PRE-IRPF</h2>
-                  <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
-                    <Metrica titulo="Cash-flow mensual pre-IRPF" valor={euros(r.cashflowMensualPreIRPF)} ayuda="NOI mensual menos hipoteca" destacado />
-                    <Metrica titulo="Rentabilidad neta operativa" valor={porcentaje(r.rentabilidadNeta)} ayuda="NOI anual / coste total" destacado />
-                    <Metrica titulo="ROE pre-IRPF" valor={porcentaje(r.roePreIRPF)} ayuda="Cash-flow anual / capital propio" destacado />
+                <Tarjeta className="border-sky-200 bg-sky-50">
+                  <div className="p-5 space-y-4">
+                    <h2 className="text-xl font-semibold text-sky-900">Resultados PRE-IRPF</h2>
+                    <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
+                      <Metrica titulo="Cash-flow mensual pre-IRPF" valor={euros(r.cashflowMensualPreIRPF)} ayuda="NOI mensual menos hipoteca" destacado />
+                      <Metrica titulo="Rentabilidad neta operativa" valor={porcentaje(r.rentabilidadNeta)} ayuda="NOI anual / coste total" destacado />
+                      <Metrica titulo="ROE pre-IRPF" valor={porcentaje(r.roePreIRPF)} ayuda="Cash-flow anual / capital propio" destacado />
+                    </div>
                   </div>
-                  <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
-                    <Metrica titulo="Cuota / alquiler" valor={porcentaje(r.ratioCuotaAlquiler)} ayuda="Parte del alquiler destinada a hipoteca" />
-                    <Metrica titulo="Margen seguridad" valor={euros(r.margenSeguridadMensual)} ayuda="Alquiler - cuota - gastos medios" />
-                    <Metrica titulo="Break-even alquiler" valor={euros(r.alquilerMinimoBreakEven)} ayuda="Alquiler mínimo para no perder dinero" />
-                  </div>
-                </div>
-              </Tarjeta>
-            )}
+                </Tarjeta>
 
-            {modoAvanzado && (
-              <>
                 <Tarjeta className="border-emerald-200 bg-emerald-50">
                   <div className="p-5 space-y-4">
                     <h2 className="text-xl font-semibold text-emerald-900">Resultados POST-IRPF</h2>
@@ -643,11 +600,6 @@ export default function CalculadoraRentabilidadInmobiliaria() {
                       <Metrica titulo="Cash-flow mensual post-IRPF" valor={euros(r.cashflowMensualPostIRPF)} ayuda="Después de impuestos estimados" destacado />
                       <Metrica titulo="ROE post-IRPF" valor={porcentaje(r.roePostIRPF)} ayuda="Cash-flow anual post-IRPF / capital propio" destacado />
                       <Metrica titulo="IRPF estimado anual" valor={euros(r.impuestoIRPF)} ayuda="Estimación fiscal simplificada" />
-                    </div>
-                    <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
-                      <Metrica titulo="Base fiscal reducida" valor={euros(r.baseReducida)} ayuda="Base después de reducción" />
-                      <Metrica titulo="Amortización fiscal" valor={euros(r.amortizacionFiscalAnual)} ayuda="Si se activa" />
-                      <Metrica titulo="Gastos deducibles" valor={euros(r.gastosDeduciblesEstimados)} ayuda="Gastos + intereses + amortización" />
                     </div>
                   </div>
                 </Tarjeta>
@@ -660,20 +612,6 @@ export default function CalculadoraRentabilidadInmobiliaria() {
                       <div><h3 className="font-semibold text-emerald-800">Fortalezas</h3><ul className="mt-2 space-y-1 text-sm">{interpretacion.fortalezas.map((x) => <li key={x}>✅ {x}</li>)}</ul></div>
                       <div><h3 className="font-semibold text-red-800">Alertas</h3><ul className="mt-2 space-y-1 text-sm">{interpretacion.alertas.map((x) => <li key={x}>⚠️ {x}</li>)}</ul></div>
                       <div><h3 className="font-semibold text-slate-800">Qué haría ahora</h3><ul className="mt-2 space-y-1 text-sm">{interpretacion.acciones.map((x) => <li key={x}>➡️ {x}</li>)}</ul></div>
-                    </div>
-                  </div>
-                </Tarjeta>
-
-                <Tarjeta>
-                  <div className="p-5">
-                    <h2 className="mb-3 text-xl font-semibold">Desglose del score</h2>
-                    <div className="grid grid-cols-1 gap-3 text-sm text-slate-700 md:grid-cols-3">
-                      <p><strong>Cash-flow:</strong> {Math.round(score.scoreCashflow)}/100</p>
-                      <p><strong>Rentabilidad neta:</strong> {Math.round(score.scoreRentabilidadNeta)}/100</p>
-                      <p><strong>ROE:</strong> {Math.round(score.scoreRoe)}/100</p>
-                      <p><strong>LTV:</strong> {Math.round(score.scoreLtv)}/100</p>
-                      <p><strong>Cuota/alquiler:</strong> {Math.round(score.scoreCuotaAlquiler)}/100</p>
-                      <p><strong>Margen seguridad:</strong> {Math.round(score.scoreMargen)}/100</p>
                     </div>
                   </div>
                 </Tarjeta>
@@ -725,18 +663,6 @@ export default function CalculadoraRentabilidadInmobiliaria() {
                     { label: "Optimista", valor: escenarios.optimista.cashflow, ayuda: "Alquiler +10%, menor vacancia" },
                   ]}
                 />
-
-                <Tarjeta>
-                  <div className="p-5 space-y-4">
-                    <h2 className="text-xl font-semibold">Simulación de escenarios</h2>
-                    <p className="text-sm text-slate-600">Muestra el cash-flow mensual post-IRPF con diferentes supuestos.</p>
-                    <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
-                      <Metrica titulo="Pesimista" valor={euros(escenarios.pesimista.cashflow)} ayuda={`Alquiler ${euros(escenarios.pesimista.alquiler)}, vacancia ${porcentaje(escenarios.pesimista.vacanciaPct)}, tipo ${porcentaje(escenarios.pesimista.tipoInteres)}`} />
-                      <Metrica titulo="Base" valor={euros(escenarios.base.cashflow)} ayuda={`Alquiler ${euros(escenarios.base.alquiler)}, vacancia ${porcentaje(escenarios.base.vacanciaPct)}, tipo ${porcentaje(escenarios.base.tipoInteres)}`} />
-                      <Metrica titulo="Optimista" valor={euros(escenarios.optimista.cashflow)} ayuda={`Alquiler ${euros(escenarios.optimista.alquiler)}, vacancia ${porcentaje(escenarios.optimista.vacanciaPct)}, tipo ${porcentaje(escenarios.optimista.tipoInteres)}`} />
-                    </div>
-                  </div>
-                </Tarjeta>
               </>
             )}
           </div>
